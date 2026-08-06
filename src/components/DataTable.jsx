@@ -10,6 +10,7 @@ export default function DataTable({
   onRowClick,
   searchable = true,
   searchPlaceholder = "Cari data…",
+  maxHeight,
 }) {
   const [query, setQuery] = useState("");
 
@@ -40,7 +41,7 @@ export default function DataTable({
               color={T.muted}
               style={{
                 position: "absolute",
-                left: 12,
+                left: 13,
                 top: "50%",
                 transform: "translateY(-50%)",
                 pointerEvents: "none",
@@ -52,14 +53,19 @@ export default function DataTable({
               placeholder={searchPlaceholder}
               style={{
                 width: "100%",
-                padding: "9px 12px 9px 34px",
-                borderRadius: 8,
+                boxSizing: "border-box",
+                height: 40,
+                padding: "0 12px 0 34px",
+                borderRadius: 9,
                 border: `1px solid ${T.border}`,
                 background: T.bg,
                 color: T.text,
                 fontSize: 13,
                 fontFamily: font.body,
+                transition: "border-color .15s ease, box-shadow .15s ease",
               }}
+              onFocus={(e) => { e.target.style.borderColor = T.blue; e.target.style.boxShadow = `0 0 0 3px ${T.blueSoft}`; }}
+              onBlur={(e) => { e.target.style.borderColor = T.border; e.target.style.boxShadow = "none"; }}
             />
           </div>
           <span style={{ fontSize: 12, color: T.muted, whiteSpace: "nowrap" }}>
@@ -73,7 +79,13 @@ export default function DataTable({
           label={rows.length ? "Tidak ada hasil yang cocok dengan pencarian." : emptyLabel}
         />
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        <div
+          style={{
+            overflowX: "auto",
+            overflowY: maxHeight ? "auto" : "visible",
+            maxHeight: maxHeight || "none",
+          }}
+        >
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
             <thead>
               <tr>
@@ -82,7 +94,7 @@ export default function DataTable({
                     key={c.key}
                     style={{
                       textAlign: "left",
-                      padding: "11px 16px",
+                      padding: "12px 16px",
                       background: T.bg,
                       borderBottom: `1px solid ${T.border}`,
                       color: T.muted,
@@ -90,6 +102,9 @@ export default function DataTable({
                       fontWeight: 700,
                       textTransform: "uppercase",
                       letterSpacing: 0.5,
+                      position: maxHeight ? "sticky" : "static",
+                      top: 0,
+                      zIndex: 1,
                     }}
                   >
                     {c.label}
@@ -105,10 +120,11 @@ export default function DataTable({
                   style={{
                     cursor: onRowClick ? "pointer" : "default",
                     background: i % 2 ? T.rowAlt : T.card,
+                    transition: "background-color .12s ease",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = T.blueSoft)}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = T.blueSoft)}
                   onMouseLeave={(e) =>
-                    (e.currentTarget.style.background = i % 2 ? T.rowAlt : T.card)
+                    (e.currentTarget.style.backgroundColor = i % 2 ? T.rowAlt : T.card)
                   }
                 >
                   {columns.map((c) => (

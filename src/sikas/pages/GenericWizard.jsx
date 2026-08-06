@@ -41,6 +41,7 @@ export default function GenericWizard({
   pdfEnabled = false,
   docxTemplate,
   buildDocPreview,
+  hideIdSelector = false,
 }) {
   const [mode, setMode] = useState("list");
   const [step, setStep] = useState(opsiOptions ? 0 : 1);
@@ -79,7 +80,7 @@ export default function GenericWizard({
   const save = () => {
     setList((prev) => [
       ...prev,
-      { ...values, opsi, id: values.id || uid(idPrefix) },
+      { ...values, opsi, id: values.id || uid(idPrefix), tanggalInput: new Date().toISOString() },
     ]);
     setShowSaveModal(false);
     setShowSuccessModal(true);
@@ -211,7 +212,7 @@ export default function GenericWizard({
             </Button>
           }
         />
-        {docxTemplate && list.length > 0 && (
+        {docxTemplate && list.length > 0 && !hideIdSelector && (
           <Card style={{ marginBottom: 14 }}>
             <div
               style={{

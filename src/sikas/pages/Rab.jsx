@@ -67,6 +67,14 @@ function emptyChecklistItem() {
 
 const LIST_COLUMNS = [
   { key: "idNumber", label: "ID Number" },
+  {
+    key: "tanggalInput",
+    label: "Tanggal Input",
+    render: (r) =>
+      r.tanggalInput
+        ? new Date(r.tanggalInput).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+        : "-",
+  },
   { key: "judulKegiatan", label: "Judul Kegiatan" },
   { key: "kategori", label: "Kategori" },
   { key: "bidang", label: "Bidang" },
@@ -86,6 +94,13 @@ const buildHeaderFields = (vendors) => [
     placeholder: "cth. RAB-2026-001",
   },
   { key: "bidang", label: "Bidang", type: "select", options: OPT.bidang },
+  {
+    key: "jenisKegiatanCsr",
+    label: "Jenis Kegiatan CSR",
+    type: "select",
+    options: OPT.jenisKegiatanCsr,
+    hint: "dipakai untuk pengelompokan di Rekapitulasi Realisasi Anggaran",
+  },
   { key: "jenisProgram", label: "Jenis Program", type: "select", options: OPT.jenisProgram },
   { key: "subprogram", label: "Subprogram", type: "select", options: OPT.subprogram },
   {
@@ -189,7 +204,7 @@ export default function RabPage({ rab, setRab, vendors, notify }) {
   };
 
   const saveAll = () => {
-    setRab((prev) => [...prev, { ...header, checklist, items, totalEvaluasi }]);
+    setRab((prev) => [...prev, { ...header, checklist, items, totalEvaluasi, tanggalInput: new Date().toISOString() }]);
     setShowSaveModal(false);
     setShowSuccessModal(true);
   };
@@ -313,45 +328,6 @@ export default function RabPage({ rab, setRab, vendors, notify }) {
             </Button>
           }
         />
-        {rab.length > 0 && (
-          <Card style={{ marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-                <div style={{ fontFamily: font.display, fontSize: 14, marginBottom: 4 }}>
-                  Preview &amp; Download berdasarkan ID
-                </div>
-                <div style={{ color: T.muted, fontSize: 12.5, lineHeight: 1.5 }}>
-                  Pilih ID RAB untuk melihat preview data, lalu unduh sebagai PDF.
-                </div>
-              </div>
-              <select
-                value={selectedId}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSelectedId(val);
-                  const rec = rab.find((r) => r.idNumber === val);
-                  if (rec) openRabPreview(rec);
-                }}
-                style={{
-                  flex: "1 1 260px",
-                  padding: "10px 12px",
-                  borderRadius: 8,
-                  border: `1px solid ${T.border}`,
-                  background: T.inputBg,
-                  color: T.text,
-                  fontSize: 13.5,
-                }}
-              >
-                <option value="">- Pilih ID RAB -</option>
-                {rab.map((r) => (
-                  <option key={r.idNumber} value={r.idNumber}>
-                    {r.idNumber}{r.judulKegiatan ? ` - ${r.judulKegiatan}` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </Card>
-        )}
         <Card padded={false}>
           <DataTable
             emptyLabel={'Belum ada RAB. Klik “Add New RAB” untuk membuat pengajuan pertama.'}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { font } from "../../lib/theme";
+import { T, font } from "../../lib/theme";
 import { ADMIN_CREDENTIALS, ROLES } from "../../lib/data";
 import AutoLogo from "../../components/AutoLogo";
 import PartnerLogos from "../../components/PartnerLogos";
@@ -113,7 +113,7 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
   };
 
   const bg = bgUrl
-    ? `linear-gradient(180deg, rgba(5,20,40,0.35), rgba(5,20,40,0.55)), url(${bgUrl})`
+    ? `linear-gradient(180deg, rgba(3,45,58,0.35), rgba(3,45,58,0.5)), url(${bgUrl})`
     : DEFAULT_BG;
 
   return (
@@ -121,8 +121,10 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
       className="login-page"
       style={{
         background: bg,
-        backgroundSize: "cover",
+        backgroundColor: T.navy,
+        backgroundSize: bgUrl ? "contain" : "cover",
         backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
         fontFamily: font.body,
         position: "relative",
       }}
@@ -154,8 +156,8 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
         className="login-glass"
         style={{
           width: "100%",
-          maxWidth: 460,
-          padding: "42px 40px 38px",
+          maxWidth: 440,
+          padding: "32px 36px 30px",
           borderRadius: 22,
           background: "rgba(255,255,255,0.12)",
           backdropFilter: "blur(24px) saturate(140%)",
@@ -170,10 +172,10 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
         <h1
           style={{
             fontFamily: font.display,
-            fontSize: 40,
+            fontSize: 32,
             fontWeight: 700,
             textAlign: "center",
-            margin: "0 0 22px",
+            margin: "0 0 16px",
             letterSpacing: -0.5,
             textShadow: "0 2px 8px rgba(0,0,0,0.25)",
           }}
@@ -185,7 +187,7 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
           style={{
             display: "flex",
             justifyContent: "center",
-            marginBottom: 16,
+            marginBottom: 12,
           }}
         >
           <div
@@ -193,9 +195,9 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              minWidth: isSquareish ? 128 : 160,
-              minHeight: 128,
-              padding: isSquareish ? 12 : 18,
+              minWidth: isSquareish ? 96 : 140,
+              minHeight: 96,
+              padding: isSquareish ? 10 : 14,
               background: "#fff",
               borderRadius: isSquareish ? "50%" : 22,
               boxShadow:
@@ -210,8 +212,8 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
               onAspect={setLogoAspect}
               style={{
                 display: "block",
-                maxWidth: isSquareish ? 100 : 260,
-                maxHeight: 100,
+                maxWidth: isSquareish ? 76 : 200,
+                maxHeight: 76,
                 width: "auto",
                 height: "auto",
                 objectFit: "contain",
@@ -224,8 +226,8 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
         <p
           style={{
             textAlign: "center",
-            margin: "0 0 26px",
-            fontSize: 15,
+            margin: "0 0 18px",
+            fontSize: 14.5,
             fontWeight: 500,
             color: "rgba(255,255,255,0.92)",
             letterSpacing: 0.1,
@@ -243,7 +245,7 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
               background: "rgba(0,0,0,0.20)",
               padding: 4,
               borderRadius: 999,
-              marginBottom: 16,
+              marginBottom: 14,
               border: "1px solid rgba(255,255,255,0.10)",
             }}
           >
@@ -290,7 +292,7 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
             autoComplete="current-password"
-            style={{ marginTop: 12 }}
+            style={{ marginTop: 10 }}
             endAdornment={
               <button
                 type="button"
@@ -342,7 +344,7 @@ export default function LoginScreen({ onLogin, onBack, authenticate }) {
             style={{
               width: "100%",
               padding: "14px 20px",
-              marginTop: 22,
+              marginTop: 16,
               borderRadius: 999,
               border: "none",
               background: loading

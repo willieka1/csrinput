@@ -84,7 +84,7 @@ function Tile({ icon: Icon, label, value, meta, onClick }) {
   );
 }
 
-export default function MadmDashboard({ user, packages, goto }) {
+export default function MadmDashboard({ user, packages, evaluasiList = [], goto }) {
   const counts = useMemo(() => {
     const c = { approved: 0, rejected: 0, processed: 0, total: 0 };
     for (const p of packages) {
@@ -95,6 +95,17 @@ export default function MadmDashboard({ user, packages, goto }) {
     }
     return c;
   }, [packages]);
+
+  const evalCounts = useMemo(() => {
+    const c = { approved: 0, rejected: 0, processed: 0, total: 0 };
+    for (const e of evaluasiList) {
+      c.total++;
+      if (e.status === DOC_STATUS.APPROVED) c.approved++;
+      else if (e.status === DOC_STATUS.REJECTED) c.rejected++;
+      else if (e.status === DOC_STATUS.PROCESSED) c.processed++;
+    }
+    return c;
+  }, [evaluasiList]);
 
   const pending = useMemo(() =>
     packages
@@ -107,13 +118,19 @@ export default function MadmDashboard({ user, packages, goto }) {
       <PageHeader
         eyebrow="Panel MADM"
         title="Dashboard MADM"
-        description="Paket kas yang telah disetujui Asman dan menunggu diproses oleh MADM."
+        description="Paket kas dan Form Evaluasi yang telah disetujui Asman dan menunggu diproses oleh MADM."
       />
 
       <div style={{ marginBottom: 14 }}>
         <LiveClock />
       </div>
 
+      <div style={{
+        fontFamily: font.mono, fontSize: 10.5, letterSpacing: 1.2,
+        textTransform: "uppercase", color: T.muted, marginBottom: 8,
+      }}>
+        Inbox RAB
+      </div>
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
@@ -124,6 +141,24 @@ export default function MadmDashboard({ user, packages, goto }) {
         <Tile icon={ThumbsDown}   label="Ditolak"           value={counts.rejected}  meta={STATUS_META.rejected}  onClick={() => goto("inbox")} />
         <Tile icon={FolderCheck}  label="Total Paket"       value={counts.total}     meta={STATUS_META.in_review} onClick={() => goto("inbox")} />
       </div>
+
+      <div style={{
+        fontFamily: font.mono, fontSize: 10.5, letterSpacing: 1.2,
+        textTransform: "uppercase", color: T.muted, marginBottom: 8,
+      }}>
+        Inbox Form Evaluasi
+      </div>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: 14, marginBottom: 18,
+      }}>
+        <Tile icon={InboxIcon}    label="Menunggu Diproses" value={evalCounts.approved}  meta={STATUS_META.approved}  onClick={() => goto("inbox-evaluasi")} />
+        <Tile icon={CheckCircle2} label="Telah Diproses"    value={evalCounts.processed} meta={STATUS_META.processed} onClick={() => goto("inbox-evaluasi")} />
+        <Tile icon={ThumbsDown}   label="Ditolak"           value={evalCounts.rejected}  meta={STATUS_META.rejected}  onClick={() => goto("inbox-evaluasi")} />
+        <Tile icon={FolderCheck}  label="Total Evaluasi"    value={evalCounts.total}     meta={STATUS_META.in_review} onClick={() => goto("inbox-evaluasi")} />
+      </div>
+
 
       <Card padded={false}>
         <div style={{

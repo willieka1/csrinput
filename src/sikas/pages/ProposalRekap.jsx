@@ -21,6 +21,7 @@ import {
   proposalFields,
 } from "../../lib/wizardFields";
 import { generateDocxFromTemplate, formatTanggalPanjang } from "../../lib/docxGenerate";
+import { BastDocPreview, PaktaDocPreview } from "../../components/DocTemplatePreview";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Modal from "../../components/Modal";
@@ -123,7 +124,7 @@ export default function ProposalRekapPage({ proposals, setProposals, notify }) {
 
   const start = () => {
     setValues({ id: nextIdFor("PRP", proposals) });
-    setBastDraft({ namaPihakPertama: "", jabatanPihakPertama: "" });
+    setBastDraft({});
     setPaktaDraft({});
     setStep(0);
     setMode("wizard");
@@ -134,8 +135,6 @@ export default function ProposalRekapPage({ proposals, setProposals, notify }) {
   const goToBastStep = () => {
     setBastDraft((prev) => ({
       tanggalBast: prev.tanggalBast || values.tanggalKegiatan || "",
-      namaPihakPertama: prev.namaPihakPertama || "",
-      jabatanPihakPertama: prev.jabatanPihakPertama || "",
       namaPihakKedua: prev.namaPihakKedua || values.kontakPIC || "",
       jabatanPihakKedua: prev.jabatanPihakKedua || "Penerima Fasilitasi",
       uraianBantuan: prev.uraianBantuan || values.judulProposal || "",
@@ -260,7 +259,7 @@ export default function ProposalRekapPage({ proposals, setProposals, notify }) {
         heading: "BAST",
         rows: [
           { label: "Tanggal BAST", value: row.bast?.tanggalBast },
-          { label: "Pihak Pertama", value: `${row.bast?.namaPihakPertama || ""} (${row.bast?.jabatanPihakPertama || ""})` },
+          { label: "Pihak Pertama", value: "Astri Oktavina (Assistant Manager KAS PT PLN Indonesia Power UBP Priok) — tetap" },
           { label: "Pihak Kedua", value: `${row.bast?.namaPihakKedua || ""} (${row.bast?.jabatanPihakKedua || ""})` },
           { label: "Uraian Bantuan", value: row.bast?.uraianBantuan },
         ],
@@ -283,8 +282,6 @@ export default function ProposalRekapPage({ proposals, setProposals, notify }) {
           id: row.id,
           judulProposal: row.judulProposal,
           tanggalBast: formatTanggalPanjang(row.bast?.tanggalBast) || row.bast?.tanggalBast,
-          namaPihakPertama: row.bast?.namaPihakPertama,
-          jabatanPihakPertama: row.bast?.jabatanPihakPertama,
           namaPihakKedua: row.bast?.namaPihakKedua,
           jabatanPihakKedua: row.bast?.jabatanPihakKedua,
           uraianBantuan: row.bast?.uraianBantuan,
@@ -395,10 +392,25 @@ export default function ProposalRekapPage({ proposals, setProposals, notify }) {
           {overviewRow && (
             <>
               <OverviewRows fields={[...FIELDS, ...ADMIN_FIELDS]} values={overviewRow} />
-              <OverviewSectionHeading>BAST</OverviewSectionHeading>
-              <OverviewRows fields={BAST_FIELDS} values={overviewRow.bast || {}} />
-              <OverviewSectionHeading>Pakta Integritas (PI)</OverviewSectionHeading>
-              <OverviewRows fields={PAKTA_FIELDS} values={overviewRow.pakta || {}} />
+              <OverviewSectionHeading>BAST — Preview Dokumen</OverviewSectionHeading>
+              <BastDocPreview
+                values={{
+                  nomor: overviewRow.id,
+                  judulBantuan: overviewRow.judulProposal,
+                  tanggal: overviewRow.bast?.tanggalBast,
+                  namaPihakKedua: overviewRow.bast?.namaPihakKedua,
+                  jabatanPihakKedua: overviewRow.bast?.jabatanPihakKedua,
+                  instansiPihakKedua: overviewRow.namaLembaga,
+                }}
+              />
+              <OverviewSectionHeading>Pakta Integritas (PI) — Preview Dokumen</OverviewSectionHeading>
+              <PaktaDocPreview
+                values={{
+                  judulKegiatan: overviewRow.judulProposal,
+                  tanggalPi: overviewRow.pakta?.tanggalPi,
+                  namaPenerima: overviewRow.pakta?.namaPenerima,
+                }}
+              />
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
                 <Button onClick={() => setOverviewRow(null)}>Tutup</Button>
               </div>
@@ -521,21 +533,26 @@ export default function ProposalRekapPage({ proposals, setProposals, notify }) {
         >
           {docPreview && (
             <>
-              <OverviewRows
-                fields={[
-                  { key: "id", label: "ID Pengajuan Proposal" },
-                  { key: "namaLembaga", label: "Nama Instansi" },
-                  { key: "judulProposal", label: "Judul Proposal/Kegiatan", full: true },
-                ]}
-                values={docPreview.row}
-              />
-              <OverviewSectionHeading>
-                {docPreview.doc === "bast" ? "Data BAST" : "Data PI"}
-              </OverviewSectionHeading>
-              <OverviewRows
-                fields={docPreview.doc === "bast" ? BAST_FIELDS : PAKTA_FIELDS}
-                values={docPreview.doc === "bast" ? docPreview.row.bast || {} : docPreview.row.pakta || {}}
-              />
+              {docPreview.doc === "bast" ? (
+                <BastDocPreview
+                  values={{
+                    nomor: docPreview.row.id,
+                    judulBantuan: docPreview.row.judulProposal,
+                    tanggal: docPreview.row.bast?.tanggalBast,
+                    namaPihakKedua: docPreview.row.bast?.namaPihakKedua,
+                    jabatanPihakKedua: docPreview.row.bast?.jabatanPihakKedua,
+                    instansiPihakKedua: docPreview.row.namaLembaga,
+                  }}
+                />
+              ) : (
+                <PaktaDocPreview
+                  values={{
+                    judulKegiatan: docPreview.row.judulProposal,
+                    tanggalPi: docPreview.row.pakta?.tanggalPi,
+                    namaPenerima: docPreview.row.pakta?.namaPenerima,
+                  }}
+                />
+              )}
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20 }}>
                 <Button variant="ghost" onClick={() => setDocPreview(null)}>Batal</Button>
                 <Button

@@ -84,7 +84,7 @@ function CounterTile({ icon: Icon, label, value, meta, onClick }) {
   );
 }
 
-export default function AsmanDashboard({ user, packages, goto }) {
+export default function AsmanDashboard({ user, packages, evaluasiList = [], goto }) {
   const counts = useMemo(() => {
     const c = { submitted: 0, approved: 0, rejected: 0, processed: 0 };
     for (const p of packages) {
@@ -96,6 +96,17 @@ export default function AsmanDashboard({ user, packages, goto }) {
     return c;
   }, [packages]);
 
+  const evalCounts = useMemo(() => {
+    const c = { submitted: 0, approved: 0, rejected: 0, processed: 0 };
+    for (const e of evaluasiList) {
+      if (e.status === DOC_STATUS.SUBMITTED || e.status === DOC_STATUS.IN_REVIEW) c.submitted++;
+      else if (e.status === DOC_STATUS.APPROVED) c.approved++;
+      else if (e.status === DOC_STATUS.REJECTED) c.rejected++;
+      else if (e.status === DOC_STATUS.PROCESSED) c.processed++;
+    }
+    return c;
+  }, [evaluasiList]);
+
   const recent = useMemo(() => {
     const sortKey = (p) => p.processedAt || p.reviewedAt || p.submittedAt || "";
     return [...packages]
@@ -105,8 +116,8 @@ export default function AsmanDashboard({ user, packages, goto }) {
 
   const roleLabel = user.role === "asman" ? "Asman" : "MADM";
   const desc = user.role === "asman"
-    ? "Ringkasan paket kas yang masuk untuk direview. Klik counter untuk buka Inbox."
-    : "Ringkasan paket kas yang menunggu diproses. Klik counter untuk buka Inbox.";
+    ? "Ringkasan paket kas dan Form Evaluasi yang masuk untuk direview. Klik counter untuk buka Inbox."
+    : "Ringkasan paket kas dan Form Evaluasi yang menunggu diproses. Klik counter untuk buka Inbox.";
 
   return (
     <div>
@@ -121,6 +132,12 @@ export default function AsmanDashboard({ user, packages, goto }) {
       </div>
 
       <div style={{
+        fontFamily: font.mono, fontSize: 10.5, letterSpacing: 1.2,
+        textTransform: "uppercase", color: T.muted, marginBottom: 8,
+      }}>
+        Inbox RAB
+      </div>
+      <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
         gap: 14, marginBottom: 18,
@@ -129,6 +146,23 @@ export default function AsmanDashboard({ user, packages, goto }) {
         <CounterTile icon={ThumbsUp}     label="Dokumen Disetujui"  value={counts.approved}  meta={STATUS_META.approved}  onClick={() => goto("inbox")} />
         <CounterTile icon={ThumbsDown}   label="Dokumen Ditolak"    value={counts.rejected}  meta={STATUS_META.rejected}  onClick={() => goto("inbox")} />
         <CounterTile icon={CheckCircle2} label="Telah Diproses"     value={counts.processed} meta={STATUS_META.processed} onClick={() => goto("inbox")} />
+      </div>
+
+      <div style={{
+        fontFamily: font.mono, fontSize: 10.5, letterSpacing: 1.2,
+        textTransform: "uppercase", color: T.muted, marginBottom: 8,
+      }}>
+        Inbox Form Evaluasi
+      </div>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+        gap: 14, marginBottom: 18,
+      }}>
+        <CounterTile icon={InboxIcon}    label="Eval Baru Masuk" value={evalCounts.submitted} meta={STATUS_META.submitted} onClick={() => goto("inbox-evaluasi")} />
+        <CounterTile icon={ThumbsUp}     label="Eval Disetujui"  value={evalCounts.approved}  meta={STATUS_META.approved}  onClick={() => goto("inbox-evaluasi")} />
+        <CounterTile icon={ThumbsDown}   label="Eval Ditolak"    value={evalCounts.rejected}  meta={STATUS_META.rejected}  onClick={() => goto("inbox-evaluasi")} />
+        <CounterTile icon={CheckCircle2} label="Telah Diproses"  value={evalCounts.processed} meta={STATUS_META.processed} onClick={() => goto("inbox-evaluasi")} />
       </div>
 
       <Card padded={false}>

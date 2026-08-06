@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { Tags } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, Tags, X } from "lucide-react";
 import { T, font } from "../../lib/theme";
 import { OPT } from "../../lib/data";
 import PageHeader from "../../components/PageHeader";
 import Card from "../../components/Card";
+import Button from "../../components/Button";
+import EmptyState from "../../components/EmptyState";
 
 const PILL_COLOR = {
   "NON PO":    { bg: "#DEEBFA", color: "#0E4C92" },
@@ -11,9 +13,12 @@ const PILL_COLOR = {
   "PO":        { bg: "#EBE2FF", color: "#3F1D9B" },
 };
 
+const FILTERS = [{ key: "all", label: "Semua" }, ...OPT.kategori.map((k) => ({ key: k, label: k }))];
+
 export default function KategoriPage({ rab, setRab, notify }) {
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState("");
+  const [filter, setFilter] = useState("all");
 
   const startEdit = (row) => {
     setEditing(row.idNumber);
@@ -23,7 +28,7 @@ export default function KategoriPage({ rab, setRab, notify }) {
   const saveEdit = (idNumber) => {
     if (!draft) return notify("Pilih kategori terlebih dahulu.", "error");
     setRab((prev) =>
-      prev.map((r) => r.idNumber === idNumber ? { ...r, kategori: draft } : r)
+      prev.map((r) => (r.idNumber === idNumber ? { ...r, kategori: draft } : r))
     );
     setEditing(null);
     notify(`Kategori ${idNumber} diperbarui ke ${draft}.`, "success", "Kategori");
@@ -31,148 +36,196 @@ export default function KategoriPage({ rab, setRab, notify }) {
 
   const cancelEdit = () => setEditing(null);
 
-  if (rab.length === 0) {
-    return (
-      <div style={{ padding: 32, fontFamily: font.body, color: T.text }}>
-        <PageHeader title="Kategori" eyebrow="Perencanaan" icon={<Tags size={20} />} />
-        <Card style={{ marginTop: 24, textAlign: "center", padding: "48px 24px", color: T.textMuted, fontSize: 14 }}>
-          Belum ada data RAB. Buat RAB terlebih dahulu untuk mengatur kategori.
-        </Card>
-      </div>
-    );
-  }
+  const counts = useMemo(() => {
+    const c = { all: rab.length };
+    OPT.kategori.forEach((k) => {
+      c[k] = rab.filter((r) => r.kategori === k).length;
+    });
+    return c;
+  }, [rab]);
+
+  const filteredRab = useMemo(
+    () => (filter === "all" ? rab : rab.filter((r) => r.kategori === filter)),
+    [rab, filter]
+  );
 
   return (
-    <div style={{ padding: 32, fontFamily: font.body, color: T.text, maxWidth: 860 }}>
+    <div>
       <PageHeader
-        title="Kategori"
         eyebrow="Perencanaan"
-        icon={<Tags size={20} />}
+        title="Kategori"
         description="Tetapkan jenis paket (NON PO / Cash Card / PO) untuk setiap ID RAB. Kategori yang dipilih akan digunakan otomatis oleh seluruh dokumen turunan."
       />
 
-      <Card style={{ marginTop: 24, padding: 0, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5, fontFamily: font.body }}>
-          <thead>
-            <tr style={{ background: T.bgAlt, borderBottom: `1px solid ${T.border}` }}>
-              <th style={{ padding: "12px 18px", textAlign: "left", fontWeight: 700, color: T.textMuted, fontSize: 11.5, letterSpacing: 0.5 }}>
-                ID RAB
-              </th>
-              <th style={{ padding: "12px 18px", textAlign: "left", fontWeight: 700, color: T.textMuted, fontSize: 11.5, letterSpacing: 0.5 }}>
-                JUDUL KEGIATAN
-              </th>
-              <th style={{ padding: "12px 18px", textAlign: "center", fontWeight: 700, color: T.textMuted, fontSize: 11.5, letterSpacing: 0.5 }}>
-                KATEGORI
-              </th>
-              <th style={{ padding: "12px 18px", textAlign: "center", fontWeight: 700, color: T.textMuted, fontSize: 11.5, letterSpacing: 0.5 }}>
-                AKSI
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rab.map((row, idx) => {
-              const isEditing = editing === row.idNumber;
-              const pill = PILL_COLOR[row.kategori] || { bg: T.bgAlt, color: T.textMuted };
+      {rab.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={Tags}
+            label="Belum ada data RAB"
+            hint="Buat RAB terlebih dahulu untuk mengatur kategori."
+          />
+        </Card>
+      ) : (
+        <>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
+            {FILTERS.map((f) => {
+              const active = filter === f.key;
+              const pill = f.key !== "all" ? PILL_COLOR[f.key] : null;
               return (
-                <tr
-                  key={row.idNumber}
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
                   style={{
-                    borderBottom: idx < rab.length - 1 ? `1px solid ${T.border}` : "none",
-                    background: isEditing ? T.blueSoft : "transparent",
-                    transition: "background 0.15s",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "8px 14px",
+                    borderRadius: 999,
+                    border: `1.5px solid ${active ? (pill ? pill.color : T.navy) : T.border}`,
+                    background: active ? (pill ? pill.bg : T.blueSoft) : T.card,
+                    color: active ? (pill ? pill.color : T.navy) : T.muted,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    fontFamily: font.body,
+                    cursor: "pointer",
+                    transition: "border-color .15s ease, background-color .15s ease",
                   }}
                 >
-                  <td style={{ padding: "14px 18px", fontWeight: 700, color: T.blue, fontFamily: font.mono, fontSize: 13 }}>
-                    {row.idNumber || "-"}
-                  </td>
-                  <td style={{ padding: "14px 18px", color: T.text, maxWidth: 320 }}>
-                    {row.judulKegiatan || "-"}
-                  </td>
-                  <td style={{ padding: "14px 18px", textAlign: "center" }}>
-                    {isEditing ? (
-                      <select
-                        value={draft}
-                        onChange={(e) => setDraft(e.target.value)}
-                        autoFocus
-                        style={{
-                          padding: "6px 12px", borderRadius: 8, fontSize: 13,
-                          border: `1.5px solid ${T.blue}`, background: T.bg,
-                          color: T.text, fontFamily: font.body, cursor: "pointer",
-                          outline: "none",
-                        }}
-                      >
-                        <option value="">-- Pilih --</option>
-                        {OPT.kategori.map((k) => (
-                          <option key={k} value={k}>{k}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span style={{
-                        display: "inline-block",
-                        padding: "4px 14px", borderRadius: 999,
-                        background: pill.bg, color: pill.color,
-                        fontSize: 12, fontWeight: 700, letterSpacing: 0.3,
-                      }}>
-                        {row.kategori || "Belum diatur"}
-                      </span>
-                    )}
-                  </td>
-                  <td style={{ padding: "14px 18px", textAlign: "center" }}>
-                    {isEditing ? (
-                      <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-                        <button
-                          onClick={() => saveEdit(row.idNumber)}
-                          style={{
-                            padding: "6px 16px", borderRadius: 8, border: "none",
-                            background: T.blue, color: "#fff",
-                            fontSize: 12.5, fontWeight: 600, cursor: "pointer",
-                            fontFamily: font.body,
-                          }}
-                        >
-                          Simpan
-                        </button>
-                        <button
-                          onClick={cancelEdit}
-                          style={{
-                            padding: "6px 14px", borderRadius: 8,
-                            border: `1px solid ${T.border}`, background: "transparent",
-                            color: T.textMuted, fontSize: 12.5, cursor: "pointer",
-                            fontFamily: font.body,
-                          }}
-                        >
-                          Batal
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => startEdit(row)}
-                        style={{
-                          padding: "6px 16px", borderRadius: 8,
-                          border: `1px solid ${T.border}`, background: "transparent",
-                          color: T.textMuted, fontSize: 12.5, cursor: "pointer",
-                          fontFamily: font.body, transition: "all 0.15s",
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = T.blueSoft;
-                          e.currentTarget.style.color = T.blue;
-                          e.currentTarget.style.borderColor = T.blue;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "transparent";
-                          e.currentTarget.style.color = T.textMuted;
-                          e.currentTarget.style.borderColor = T.border;
-                        }}
-                      >
-                        Ubah
-                      </button>
-                    )}
-                  </td>
-                </tr>
+                  {f.label}
+                  <span
+                    style={{
+                      fontFamily: font.mono,
+                      fontSize: 11,
+                      padding: "1px 7px",
+                      borderRadius: 999,
+                      background: active ? "rgba(255,255,255,0.6)" : T.bg,
+                    }}
+                  >
+                    {counts[f.key] ?? 0}
+                  </span>
+                </button>
               );
             })}
-          </tbody>
-        </table>
-      </Card>
+          </div>
+
+          <Card padded={false}>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13.5 }}>
+                <thead>
+                  <tr>
+                    <th style={th}>ID RAB</th>
+                    <th style={th}>Judul Kegiatan</th>
+                    <th style={{ ...th, textAlign: "center" }}>Kategori</th>
+                    <th style={{ ...th, textAlign: "center" }}>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRab.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} style={{ padding: "32px 16px", textAlign: "center", color: T.muted, fontSize: 13 }}>
+                        Tidak ada RAB dengan kategori ini.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredRab.map((row, idx) => {
+                      const isEditing = editing === row.idNumber;
+                      const pill = PILL_COLOR[row.kategori] || { bg: T.bg, color: T.muted };
+                      return (
+                        <tr
+                          key={row.idNumber}
+                          style={{
+                            background: isEditing ? T.blueSoft : idx % 2 ? T.rowAlt : T.card,
+                            transition: "background-color .15s ease",
+                          }}
+                        >
+                          <td style={{ ...td, fontWeight: 700, color: T.blue, fontFamily: font.mono }}>
+                            {row.idNumber || "—"}
+                          </td>
+                          <td style={{ ...td, maxWidth: 320 }}>{row.judulKegiatan || "—"}</td>
+                          <td style={{ ...td, textAlign: "center" }}>
+                            {isEditing ? (
+                              <select
+                                value={draft}
+                                onChange={(e) => setDraft(e.target.value)}
+                                autoFocus
+                                style={selectStyle}
+                              >
+                                <option value="">-- Pilih --</option>
+                                {OPT.kategori.map((k) => (
+                                  <option key={k} value={k}>{k}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  padding: "4px 14px",
+                                  borderRadius: 999,
+                                  background: pill.bg,
+                                  color: pill.color,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  letterSpacing: 0.3,
+                                }}
+                              >
+                                {row.kategori || "Belum diatur"}
+                              </span>
+                            )}
+                          </td>
+                          <td style={{ ...td, textAlign: "center" }}>
+                            {isEditing ? (
+                              <div style={{ display: "inline-flex", gap: 6 }}>
+                                <Button variant="accent" icon={Check} onClick={() => saveEdit(row.idNumber)}>
+                                  Simpan
+                                </Button>
+                                <Button variant="ghost" icon={X} onClick={cancelEdit}>
+                                  Batal
+                                </Button>
+                              </div>
+                            ) : (
+                              <Button variant="ghost" onClick={() => startEdit(row)}>
+                                Ubah
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
+
+const th = {
+  textAlign: "left",
+  padding: "11px 16px",
+  background: T.bg,
+  borderBottom: `1px solid ${T.border}`,
+  color: T.muted,
+  fontSize: 11,
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: 0.5,
+};
+const td = {
+  padding: "13px 16px",
+  borderBottom: `1px solid ${T.border}`,
+  color: T.text,
+};
+const selectStyle = {
+  padding: "6px 12px",
+  borderRadius: 8,
+  fontSize: 13,
+  border: `1.5px solid ${T.blue}`,
+  background: T.card,
+  color: T.text,
+  fontFamily: font.body,
+  cursor: "pointer",
+  outline: "none",
+};

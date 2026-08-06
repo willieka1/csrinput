@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
-import { ClipboardList, Eye, Save } from "lucide-react";
+import { AlertTriangle, ClipboardList, Eye, FileDown, FileSpreadsheet, Save } from "lucide-react";
 import { T, font } from "../../lib/theme";
 import { hitungSkorEvaluasi, uid } from "../../lib/utils";
 import { evaluasiKategoriFields, EVALUASI_NILAI_OPTIONS } from "../../lib/wizardFields";
+import { DOC_STATUS, STATUS_META } from "../../lib/data";
 import { generateEvaluasiXlsx } from "../../lib/xlsxGenerate";
+import { generateEvaluasiPdf } from "../../lib/pdf";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import Modal from "../../components/Modal";
@@ -55,6 +57,7 @@ export default function ProposalEvaluasiPage({ proposals, evaluasiList, setEvalu
   const [selectedId, setSelectedId] = useState(null);
   const [penilaian, setPenilaian] = useState(emptyPenilaian());
   const [saving, setSaving] = useState(false);
+  const [savingPdf, setSavingPdf] = useState(false);
   const [viewingRecord, setViewingRecord] = useState(null);
 
   const selected = proposals.find((p) => p.id === selectedId) || null;
@@ -72,13 +75,26 @@ export default function ProposalEvaluasiPage({ proposals, evaluasiList, setEvalu
       ...LIST_COLUMNS_BASE,
       {
         key: "_evalStatus",
-        label: "Evaluasi",
-        render: (r) =>
-          evaluasiByProposalId[r.id] ? (
-            <Badge tone="success">Sudah Dievaluasi</Badge>
-          ) : (
-            <Badge tone="muted">Belum Dievaluasi</Badge>
-          ),
+        label: "Status Evaluasi",
+        render: (r) => {
+          const rec = evaluasiByProposalId[r.id];
+          if (!rec) return <Badge tone="muted">Belum Dievaluasi</Badge>;
+          const meta = STATUS_META[rec.status] || STATUS_META.submitted;
+          let label = meta.label;
+          if (rec.status === DOC_STATUS.REJECTED && rec.rejectedBy) {
+            label = rec.rejectedBy === "asman" ? "Ditolak Asman" : "Ditolak MADM";
+          }
+          return (
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "3px 10px", borderRadius: 999,
+              background: meta.bg, color: meta.color,
+              fontSize: 11.5, fontWeight: 700,
+            }}>
+              {label}
+            </span>
+          );
+        },
       },
     ],
     [evaluasiByProposalId]
@@ -110,7 +126,38 @@ export default function ProposalEvaluasiPage({ proposals, evaluasiList, setEvalu
   // Sama persis dengan formula L37 di template: =IF(Q30<=50,"Ditolak","Disetujui")
   const keputusanOtomatis = skorAkhir <= 50 ? "Permohonan Ditolak" : "Permohonan Disetujui";
 
-  const handleSave = async () => {
+  const buildRecord = () => ({
+    id: evaluasiByProposalId[selected.id]?.id || uid("EVL"),
+    proposalId: selected.id,
+    namaLembaga: selected.namaLembaga,
+    judulProposal: selected.judulProposal,
+    penilai: penilaian.penilai,
+    tanggalPenilaian: penilaian.tanggalPenilaian,
+    nilai: { ...penilaian.nilai },
+    catatan: penilaian.catatan,
+    skorAkhir,
+    keputusan: keputusanOtomatis,
+    // Setiap kali Humas simpan/kirim ulang, statusnya balik ke SUBMITTED —
+    // masuk antrean baru ke Inbox Asman, catatan penolakan sebelumnya
+    // dibersihkan supaya gak ketuker sama catatan yang lama.
+    status: DOC_STATUS.SUBMITTED,
+    reviewedBy: "", reviewedAt: "", reviewNote: "",
+    processedBy: "", processedAt: "", processNote: "",
+    rejectedBy: "",
+  });
+
+  const saveToState = () => {
+    const record = buildRecord();
+    setEvaluasiList((prev) => {
+      const exists = prev.some((e) => e.proposalId === selected.id);
+      return exists
+        ? prev.map((e) => (e.proposalId === selected.id ? record : e))
+        : [record, ...prev];
+    });
+    return record;
+  };
+
+  const handleDownloadXlsx = async () => {
     if (!selected) return;
     setSaving(true);
     try {
@@ -124,34 +171,39 @@ export default function ProposalEvaluasiPage({ proposals, evaluasiList, setEvalu
         catatan: penilaian.catatan,
         outputName: `Form-Evaluasi-${selected.id}.xlsx`,
       });
-
-      // Simpan/update juga ke state aplikasi supaya bisa dilihat lagi
-      // lewat tombol "Lihat" tanpa isi ulang / download ulang.
-      const record = {
-        id: evaluasiByProposalId[selected.id]?.id || uid("EVL"),
-        proposalId: selected.id,
-        namaLembaga: selected.namaLembaga,
-        judulProposal: selected.judulProposal,
-        penilai: penilaian.penilai,
-        tanggalPenilaian: penilaian.tanggalPenilaian,
-        nilai: { ...penilaian.nilai },
-        catatan: penilaian.catatan,
-        skorAkhir,
-        keputusan: keputusanOtomatis,
-      };
-      setEvaluasiList((prev) => {
-        const exists = prev.some((e) => e.proposalId === selected.id);
-        return exists
-          ? prev.map((e) => (e.proposalId === selected.id ? record : e))
-          : [record, ...prev];
-      });
-
-      if (notify) notify("Form Evaluasi tersimpan & berhasil diunduh!", "success", "Form Evaluasi");
+      saveToState();
+      if (notify) notify("Form Evaluasi tersimpan & berhasil diunduh (.xlsx)!", "success", "Form Evaluasi");
     } catch (e) {
       // eslint-disable-next-line no-alert
       alert(`Gagal menyimpan Form Evaluasi: ${e.message}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!selected) return;
+    setSavingPdf(true);
+    try {
+      await generateEvaluasiPdf({
+        id: selected.id,
+        pemohon: selected.namaLembaga,
+        perihal: selected.judulProposal,
+        penilai: penilaian.penilai,
+        tanggal: penilaian.tanggalPenilaian,
+        perKategori,
+        skorAkhir,
+        keputusan: keputusanOtomatis,
+        catatan: penilaian.catatan,
+        filename: `Form-Evaluasi-${selected.id}`,
+      });
+      saveToState();
+      if (notify) notify("Form Evaluasi tersimpan & berhasil diunduh (.pdf)!", "success", "Form Evaluasi");
+    } catch (e) {
+      // eslint-disable-next-line no-alert
+      alert(`Gagal membuat PDF Form Evaluasi: ${e.message}`);
+    } finally {
+      setSavingPdf(false);
     }
   };
 
@@ -184,6 +236,38 @@ export default function ProposalEvaluasiPage({ proposals, evaluasiList, setEvalu
 
       {selected && (
         <Card>
+          {(() => {
+            const rec = evaluasiByProposalId[selected.id];
+            if (!rec || rec.status !== DOC_STATUS.REJECTED) return null;
+            const note = rec.rejectedBy === "madm" ? rec.processNote : rec.reviewNote;
+            const meta = STATUS_META.rejected;
+            return (
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  padding: "12px 14px",
+                  borderRadius: 8,
+                  marginBottom: 16,
+                  background: meta.bg,
+                  border: `1px solid ${meta.color}30`,
+                  color: meta.color,
+                  fontSize: 13,
+                }}
+              >
+                <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: 2 }}>
+                    Ditolak oleh {rec.rejectedBy === "madm" ? "MADM" : "Asman"} — perlu direvisi
+                  </div>
+                  <div>{note || "Tidak ada catatan."}</div>
+                  <div style={{ marginTop: 4, opacity: 0.85 }}>
+                    Perbaiki nilai/catatan di bawah, lalu simpan lagi — otomatis dikirim ulang ke Inbox Asman.
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
           <div
             style={{
               display: "flex",
@@ -197,9 +281,14 @@ export default function ProposalEvaluasiPage({ proposals, evaluasiList, setEvalu
             <h3 style={{ fontFamily: font.display, fontSize: 16, margin: 0 }}>
               LEMBAR EVALUASI BANTUAN TJSL
             </h3>
-            <Button icon={Save} onClick={handleSave} disabled={saving}>
-              {saving ? "Menyimpan…" : "Simpan (tersimpan di app + unduh .xlsx)"}
-            </Button>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Button icon={FileSpreadsheet} onClick={handleDownloadXlsx} disabled={saving || savingPdf}>
+                {saving ? "Menyimpan…" : "Unduh Excel (.xlsx)"}
+              </Button>
+              <Button variant="ghost" icon={FileDown} onClick={handleDownloadPdf} disabled={saving || savingPdf}>
+                {savingPdf ? "Menyimpan…" : "Unduh PDF"}
+              </Button>
+            </div>
           </div>
 
           {/* --- grid ala spreadsheet, sel B7/B8/O7/O8 = identitas --- */}

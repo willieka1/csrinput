@@ -52,11 +52,12 @@ export default function Button({
         alignItems: "center",
         justifyContent: "center",
         gap: 8,
-        padding: "10px 18px",
-        borderRadius: 8,
+        minHeight: 42,
+        padding: "0 18px",
+        borderRadius: 10,
         fontFamily: font.body,
         fontWeight: 600,
-        fontSize: 14,
+        fontSize: 13.5,
         border: v.border || "1px solid transparent",
         background: v.background,
         color: v.color,
@@ -64,14 +65,15 @@ export default function Button({
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.55 : 1,
         whiteSpace: "nowrap",
+        transition: "background-color .15s ease, box-shadow .15s ease, transform .1s ease",
         ...style,
       }}
       onMouseEnter={(e) => !disabled && (e.currentTarget.style.backgroundColor = v.hover)}
       onMouseLeave={(e) => !disabled && (e.currentTarget.style.backgroundColor = v.background)}
-      onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.98)")}
-      onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+      onMouseDown={(e) => !disabled && (e.currentTarget.style.transform = "scale(0.98)")}
+      onMouseUp={(e) => !disabled && (e.currentTarget.style.transform = "scale(1)")}
     >
-      {Icon && <Icon size={16} />}
+      {Icon && <Icon size={15} />}
       {children}
     </button>
   );

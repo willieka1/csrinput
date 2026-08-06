@@ -29,6 +29,8 @@ import SilapakApp from "./silapak-priok/pages/SilapakApp";
 import LoginScreen from "./sikas/pages/Login";
 import Dashboard from "./sikas/pages/Dashboard";
 import RabPage from "./sikas/pages/Rab";
+import RkaPage from "./sikas/pages/RkaPage";
+import RekapAnggaranPage from "./sikas/pages/RekapAnggaranPage";
 import VendorPage from "./sikas/pages/Vendor";
 import HistoryPage from "./sikas/pages/History";
 import Panduan from "./sikas/pages/Panduan";
@@ -38,6 +40,7 @@ import ProposalRekapPage from "./sikas/pages/ProposalRekap";
 import ProposalEvaluasiPage from "./sikas/pages/ProposalEvaluasi";
 import PengelolaanKomunikasi from "./sikas/pages/PengelolaanKomunikasi";
 import InboxPage from "./sikas/pages/Inbox";
+import InboxEvaluasiPage from "./sikas/pages/InboxEvaluasi";
 import AsmanDashboard from "./sikas/asman/pages/AsmanDashboard";
 import MadmDashboard from "./sikas/madm/pages/MadmDashboard";
 import KasPackagesPage from "./sikas/pages/KasPackages";
@@ -160,6 +163,7 @@ export default function App() {
   const [pakta, setPakta] = useState(() => seedSubDoc("id", "judulBantuan"));
   const [bapp, setBapp] = useState([]);
   const [laporan, setLaporan] = useState([]);
+  const [rka, setRka] = useState([]);
 
   const USERS_LS_KEY = "sikas.users.v1";
   const [users, setUsers] = useState(() => {
@@ -229,6 +233,9 @@ export default function App() {
   const updatePackage = (idRab, patch) => {
     setPackages((prev) => prev.map((p) => (p.idRab === idRab ? { ...p, ...patch } : p)));
   };
+  const updateEvaluasi = (id, patch) => {
+    setEvaluasi((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+  };
   const upsertPackage = (idRab, patch) => {
     setPackages((prev) => {
       const found = prev.some((p) => p.idRab === idRab);
@@ -291,8 +298,17 @@ export default function App() {
           pdfEnabled
           docxTemplate={DOCX_TEMPLATES.tor}
           buildDocPreview={(v) => <TorDocPreview values={v} />}
+          hideIdSelector
           columns={[
             { key: "id", label: "ID TOR" },
+            {
+              key: "tanggalInput",
+              label: "Tanggal Input",
+              render: (r) =>
+                r.tanggalInput
+                  ? new Date(r.tanggalInput).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+                  : "-",
+            },
             { key: "kategori", label: "Kategori" },
             { key: "judulKegiatan", label: "Judul Kegiatan" },
             { key: "tempat", label: "Tempat" },
@@ -375,6 +391,12 @@ export default function App() {
           ]}
         />
       ),
+      "rekap-anggaran": (
+        <RekapAnggaranPage rka={rka} rab={rab} laporan={laporan} />
+      ),
+      rka: (
+        <RkaPage rka={rka} setRka={setRka} notify={notify} />
+      ),
       vendor: (
         <VendorPage vendors={vendors} setVendors={setVendors} notify={notify} />
       ),
@@ -387,11 +409,19 @@ export default function App() {
           notify={notify}
         />
       ),
+      "inbox-evaluasi": (
+        <InboxEvaluasiPage
+          user={user}
+          evaluasiList={evaluasi}
+          onUpdateEvaluasi={updateEvaluasi}
+          notify={notify}
+        />
+      ),
       "asman-dashboard": (
-        <AsmanDashboard user={user} packages={packages} goto={setActive} />
+        <AsmanDashboard user={user} packages={packages} evaluasiList={evaluasi} goto={setActive} />
       ),
       "madm-dashboard": (
-        <MadmDashboard user={user} packages={packages} goto={setActive} />
+        <MadmDashboard user={user} packages={packages} evaluasiList={evaluasi} goto={setActive} />
       ),
       "paket-kas": (
         <KasPackagesPage
@@ -431,7 +461,7 @@ export default function App() {
     [
       user,
       rab, tor, bast, pakta, bapp, laporan, vendors, history,
-      proposals, konten, evaluasi, rabIdOptions, packages, users,
+      proposals, konten, evaluasi, rabIdOptions, packages, users, rka,
     ]
   );
 
@@ -527,6 +557,10 @@ export default function App() {
         onBackToPortal={handleBackToPortal}
         collapsed={collapsed}
         setCollapsed={setCollapsed}
+        themeMode={themeMode}
+        onToggleTheme={() =>
+          setThemeMode((m) => (m === "dark" ? "light" : "dark"))
+        }
       />
       <div
         style={{

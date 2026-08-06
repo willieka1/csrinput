@@ -11,6 +11,7 @@ import Button from "../../components/Button";
 import Modal from "../../components/Modal";
 import PageHeader from "../../components/PageHeader";
 import DataTable from "../../components/DataTable";
+import DatePicker from "../../components/DatePicker";
 
 const ROLE_TONE = {
   humas:   { color: "#0E4C92", bg: "#DEEBFA" },
@@ -144,24 +145,14 @@ function UserForm({ initial, onCancel, onSave, existingUsernames }) {
             <Calendar size={11} style={{ verticalAlign: "-1px", marginRight: 4 }} />
             Aktif Dari
           </label>
-          <input
-            type="date"
-            value={activeFrom}
-            onChange={(e) => setActiveFrom(e.target.value)}
-            style={inputStyle}
-          />
+          <DatePicker value={activeFrom} onChange={setActiveFrom} placeholder="Pilih tanggal mulai" />
         </div>
         <div>
           <label style={labelStyle}>
             <Calendar size={11} style={{ verticalAlign: "-1px", marginRight: 4 }} />
             Aktif Sampai
           </label>
-          <input
-            type="date"
-            value={activeTo}
-            onChange={(e) => setActiveTo(e.target.value)}
-            style={inputStyle}
-          />
+          <DatePicker value={activeTo} onChange={setActiveTo} placeholder="Pilih tanggal akhir" />
         </div>
       </div>
 

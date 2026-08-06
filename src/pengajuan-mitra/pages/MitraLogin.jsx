@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { LogIn, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { font } from "../../lib/theme";
+import { T, font } from "../../lib/theme";
 
 const DEFAULT_BG =
   "radial-gradient(ellipse at 30% 15%, rgba(99,102,241,0.22) 0%, transparent 55%),"
@@ -90,8 +90,10 @@ export default function MitraLogin({ onLogin, onBack, authenticate }) {
       style={{
         minHeight: "100vh",
         background: bg,
-        backgroundSize: "cover",
+        backgroundColor: T.navy,
+        backgroundSize: bgUrl ? "contain" : "cover",
         backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

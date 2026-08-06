@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { font } from "../../lib/theme";
+import { T, font } from "../../lib/theme";
 import AutoLogo from "../../components/AutoLogo";
 import PartnerLogos from "../../components/PartnerLogos";
 import silapakLogo from "../../assets/silapak-logo.svg";
@@ -94,8 +94,10 @@ export default function LandingGateway({ onSelect }) {
       className="login-page"
       style={{
         background: bg,
-        backgroundSize: "cover",
+        backgroundColor: T.navy,
+        backgroundSize: bgUrl ? "contain" : "cover",
         backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
         fontFamily: font.body,
       }}
     >

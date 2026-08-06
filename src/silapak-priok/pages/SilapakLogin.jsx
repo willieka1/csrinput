@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowLeft, Eye } from "lucide-react";
-import { font } from "../../lib/theme";
+import { T, font } from "../../lib/theme";
 import AutoLogo from "../../components/AutoLogo";
 import PartnerLogos from "../../components/PartnerLogos";
 
@@ -95,8 +95,10 @@ export default function SilapakLogin({ onLogin, onBack, authenticate }) {
       style={{
         background: bg,
         position: "relative",
-        backgroundSize: "cover",
+        backgroundColor: T.navy,
+        backgroundSize: bgUrl ? "contain" : "cover",
         backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
         fontFamily: font.body,
       }}
     >

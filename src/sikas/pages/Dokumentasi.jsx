@@ -1,31 +1,31 @@
 import { useState } from "react";
-import { Camera, Upload, Trash2, Eye } from "lucide-react";
+import { Camera, Eye, Trash2, Upload } from "lucide-react";
 import { T, font } from "../../lib/theme";
 import { uid } from "../../lib/utils";
 import PageHeader from "../../components/PageHeader";
 import Card from "../../components/Card";
 import Modal from "../../components/Modal";
+import UploadDocModal from "../../components/UploadDocModal";
 
 export default function DokumentasiPage({ rab, notify }) {
   const [docs, setDocs] = useState([]);
   const [showUpload, setShowUpload] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  const handleUpload = (rabItem, files) => {
-    if (!files || files.length === 0) return;
-    const newDocs = Array.from(files).map((f) => ({
+  const handleSave = (rabItem, files, keterangan) => {
+    const newDocs = files.map((f) => ({
       id: uid("DOK"),
       rabId: rabItem.idNumber,
       judulRab: rabItem.judulKegiatan,
       fileName: f.name,
       fileSize: f.size,
       fileType: f.type,
+      keterangan,
       uploadedAt: new Date().toISOString(),
       url: URL.createObjectURL(f),
     }));
     setDocs((prev) => [...prev, ...newDocs]);
-    setShowUpload(null);
-    if (notify) notify(`${newDocs.length} file dokumentasi berhasil diunggah.`, "success", "Upload Dokumentasi");
+    if (notify) notify(`${newDocs.length} file dokumentasi berhasil disimpan.`, "success", "Upload Dokumentasi");
   };
 
   const handleDelete = (docId) => {
@@ -82,7 +82,11 @@ export default function DokumentasiPage({ rab, notify }) {
                         border: `1px solid ${T.border}`, background: T.bg,
                         display: "flex", alignItems: "center", gap: 10,
                       }}>
-                        <Camera size={16} color={T.muted} style={{ flexShrink: 0 }} />
+                        {d.fileType?.startsWith("image/") ? (
+                          <img src={d.url} alt={d.fileName} style={{ width: 34, height: 34, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                        ) : (
+                          <Camera size={16} color={T.muted} style={{ flexShrink: 0 }} />
+                        )}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{
                             fontSize: 12.5, fontWeight: 600, color: T.heading,
@@ -108,22 +112,14 @@ export default function DokumentasiPage({ rab, notify }) {
         </div>
       )}
 
-      {showUpload && (
-        <Modal open onClose={() => setShowUpload(null)} title={`Upload Dokumentasi - ${showUpload.idNumber}`} icon={Upload} width={420}>
-          <div style={{ padding: "10px 0" }}>
-            <div style={{ fontSize: 13, color: T.muted, marginBottom: 14 }}>
-              <b>{showUpload.judulKegiatan}</b>
-            </div>
-            <input
-              type="file"
-              multiple
-              accept="image/*,.pdf,.doc,.docx"
-              onChange={(e) => handleUpload(showUpload, e.target.files)}
-              style={{ fontSize: 13 }}
-            />
-          </div>
-        </Modal>
-      )}
+      <UploadDocModal
+        open={!!showUpload}
+        onClose={() => setShowUpload(null)}
+        title={showUpload ? `Upload Dokumentasi - ${showUpload.idNumber}` : ""}
+        subtitle={showUpload?.judulKegiatan}
+        accept="image/*,.pdf,.doc,.docx"
+        onSave={(files, keterangan) => handleSave(showUpload, files, keterangan)}
+      />
 
       {preview && (
         <Modal open onClose={() => setPreview(null)} title={preview.fileName} icon={Eye} width={600}>

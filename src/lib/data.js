@@ -20,10 +20,16 @@ import {
   FileSearch,
   Paperclip,
   Tags,
+  BarChart3,
 } from "lucide-react";
 
 export const OPT = {
   kategori: ["NON PO", "Cash Card", "PO"],
+  jenisKegiatanCsr: [
+    "Bakti Pelayanan Masyarakat",
+    "Bakti Pemberdayaan Masyarakat",
+    "Bakti Pembinaan Hubungan",
+  ],
   bidang: ["Niaga", "Keuangan", "SDM & Umum", "Perencanaan", "K3L"],
   jenisProgram: ["CSR", "Bina Lingkungan", "Sponsorship", "Donasi"],
   subprogram: [
@@ -249,13 +255,14 @@ export const MENU = [
   { key: "dashboard",       label: "Dashboard",              icon: LayoutDashboard, group: "utama", roles: ["humas"] },
   { key: "asman-dashboard", label: "Dashboard Asman",        icon: LayoutDashboard, group: "utama", roles: ["asman"] },
   { key: "madm-dashboard",  label: "Dashboard MADM",         icon: LayoutDashboard, group: "utama", roles: ["madm"] },
-  { key: "inbox",           label: "Inbox Paket Kas",        icon: Inbox,           group: "utama", roles: ["asman", "madm"] },
+  { key: "inbox",           label: "Inbox RAB",             icon: Inbox,           group: "utama", roles: ["asman", "madm"] },
+  { key: "inbox-evaluasi",  label: "Inbox Form Evaluasi",   icon: FileText,        group: "utama", roles: ["asman", "madm"] },
 
   { key: "proposal-rekap",    label: "Rekap Pengajuan Proposal", icon: Handshake, group: "humas", roles: ["humas"] },
   { key: "proposal-evaluasi", label: "Cetak Form Evaluasi",      icon: FileText,  group: "humas", roles: ["humas"] },
   { key: "konten",            label: "Pengelolaan Komunikasi",   icon: Megaphone, group: "humas", roles: ["humas"] },
 
-  { key: "rab",      label: "RAB & Jenis Paket", icon: FileSpreadsheet, group: "perencanaan", roles: ["humas"] },
+  { key: "rab",      label: "RAB", icon: FileSpreadsheet, group: "perencanaan", roles: ["humas"] },
   { key: "tor",      label: "TOR",               icon: FileText,        group: "perencanaan", roles: ["humas"] },
   { key: "kategori", label: "Kategori",           icon: Tags,            group: "perencanaan", roles: ["humas"] },
 
@@ -276,6 +283,9 @@ export const MENU = [
   { key: "laporan",   label: "Laporan",                    icon: FileText,        group: "administrasi", roles: ["humas"] },
   { key: "vendor",    label: "Vendor",                     icon: Building2,       group: "administrasi", roles: ["humas"] },
 
+  { key: "rekap-anggaran", label: "Rekap Anggaran", icon: BarChart3,     group: "anggaran", roles: ["humas"] },
+  { key: "rka",             label: "RKA",            icon: ClipboardList, group: "anggaran", roles: ["humas"] },
+
   { key: "history", label: "History", icon: Clock,       group: "master" },
   { key: "panduan", label: "Panduan", icon: HelpCircle,  group: "master" },
 
@@ -290,6 +300,7 @@ export const MENU_GROUPS = [
   { key: "pelaksanaan", label: "Pelaksanaan" },
   { key: "pembayaran", label: "Pembayaran" },
   { key: "administrasi", label: "Administrasi" },
+  { key: "anggaran", label: "Rekapitulasi Realisasi Anggaran" },
   { key: "master", label: "Master & Bantuan" },
 ];
 

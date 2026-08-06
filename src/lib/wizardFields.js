@@ -72,8 +72,6 @@ export const proposalAdminFields = () => [
 
 export const bastStepFields = () => [
   { key: "tanggalBast", label: "Tanggal BAST", type: "date", section: "Berita Acara Serah Terima (BAST)" },
-  { key: "namaPihakPertama", label: "Nama Pihak Pertama (PLN)" },
-  { key: "jabatanPihakPertama", label: "Jabatan Pihak Pertama (PLN)" },
   { key: "namaPihakKedua", label: "Nama Pihak Kedua (Penerima)" },
   { key: "jabatanPihakKedua", label: "Jabatan Pihak Kedua (Penerima)" },
   {

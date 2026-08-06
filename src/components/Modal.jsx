@@ -18,8 +18,7 @@ export default function Modal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(7,27,54,0.45)",
-        backdropFilter: "blur(2px)",
+        background: "rgba(14,37,48,0.5)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -34,7 +33,7 @@ export default function Modal({
       <div
         style={{
           background: T.card,
-          borderRadius: 14,
+          borderRadius: 16,
           width,
           maxWidth: "100%",
           maxHeight: "85vh",
@@ -58,7 +57,7 @@ export default function Modal({
                 style={{
                   width: 32,
                   height: 32,
-                  borderRadius: 8,
+                  borderRadius: 9,
                   background: `${accent}14`,
                   display: "grid",
                   placeItems: "center",
@@ -71,7 +70,8 @@ export default function Modal({
             <h3
               style={{
                 fontFamily: font.display,
-                fontSize: 16.5,
+                fontSize: 16,
+                fontWeight: 700,
                 margin: 0,
                 color: T.heading,
                 flex: 1,
@@ -88,8 +88,14 @@ export default function Modal({
                   background: "transparent",
                   color: T.muted,
                   cursor: "pointer",
-                  padding: 4,
+                  padding: 6,
+                  borderRadius: 8,
+                  display: "grid",
+                  placeItems: "center",
+                  transition: "background-color .15s ease, color .15s ease",
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = T.bg; e.currentTarget.style.color = T.heading; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.muted; }}
               >
                 <X size={17} />
               </button>

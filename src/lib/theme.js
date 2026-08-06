@@ -22,10 +22,10 @@ export const T = {
   successSoft: "var(--success-soft)",
   topbarBg: "var(--topbar-bg)",
 
-  navyDeep: "#071B36",
-  yellow: "#FFC72C",
-  yellowDeep: "#E6A700",
-  yellowText: "#8A6100",
+  navyDeep: "#023244",
+  yellow: "#F5C518",
+  yellowDeep: "#D9AC00",
+  yellowText: "#7A5C00",
 
   shadowSm: "var(--shadow-sm)",
   shadowMd: "var(--shadow-md)",

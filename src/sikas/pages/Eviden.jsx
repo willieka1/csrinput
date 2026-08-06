@@ -1,33 +1,37 @@
 import { useState } from "react";
-import { Paperclip, Upload, Trash2, Eye, FileText } from "lucide-react";
+import { Eye, FileSpreadsheet, FileText, Image as ImageIcon, Trash2, Upload } from "lucide-react";
 import { T, font } from "../../lib/theme";
 import { uid } from "../../lib/utils";
 import PageHeader from "../../components/PageHeader";
 import Card from "../../components/Card";
 import Modal from "../../components/Modal";
+import UploadDocModal from "../../components/UploadDocModal";
+
+function iconForType(type) {
+  if (type?.startsWith("image/")) return ImageIcon;
+  if (type?.includes("sheet") || type?.includes("excel")) return FileSpreadsheet;
+  return FileText;
+}
 
 export default function EvidenPage({ rab, notify }) {
   const [evidens, setEvidens] = useState([]);
   const [showUpload, setShowUpload] = useState(null);
-  const [keterangan, setKeterangan] = useState("");
+  const [preview, setPreview] = useState(null);
 
-  const handleUpload = (rabItem, files) => {
-    if (!files || files.length === 0) return;
-    const newItems = Array.from(files).map((f) => ({
+  const handleSave = (rabItem, files, keterangan) => {
+    const newItems = files.map((f) => ({
       id: uid("EVD"),
       rabId: rabItem.idNumber,
       judulRab: rabItem.judulKegiatan,
       fileName: f.name,
       fileSize: f.size,
       fileType: f.type,
-      keterangan: keterangan.trim(),
+      keterangan,
       uploadedAt: new Date().toISOString(),
       url: URL.createObjectURL(f),
     }));
     setEvidens((prev) => [...prev, ...newItems]);
-    setShowUpload(null);
-    setKeterangan("");
-    if (notify) notify(`${newItems.length} eviden berhasil diunggah.`, "success", "Upload Eviden");
+    if (notify) notify(`${newItems.length} eviden berhasil disimpan.`, "success", "Upload Eviden");
   };
 
   const handleDelete = (id) => {
@@ -71,28 +75,38 @@ export default function EvidenPage({ rab, notify }) {
                   <div style={{ fontSize: 12.5, color: T.muted, padding: "8px 0" }}>Belum ada eviden.</div>
                 ) : (
                   <div style={{ display: "grid", gap: 8 }}>
-                    {items.map((e) => (
-                      <div key={e.id} style={{
-                        display: "flex", alignItems: "center", gap: 12,
-                        padding: "10px 12px", borderRadius: 8,
-                        border: `1px solid ${T.border}`, background: T.bg,
-                      }}>
-                        <FileText size={16} color={T.muted} style={{ flexShrink: 0 }} />
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{
-                            fontSize: 12.5, fontWeight: 600, color: T.heading,
-                            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                          }}>{e.fileName}</div>
-                          <div style={{ fontSize: 10.5, color: T.muted }}>
-                            {(e.fileSize / 1024).toFixed(1)} KB
-                            {e.keterangan ? ` - ${e.keterangan}` : ""}
+                    {items.map((e) => {
+                      const Icon = iconForType(e.fileType);
+                      return (
+                        <div key={e.id} style={{
+                          display: "flex", alignItems: "center", gap: 12,
+                          padding: "10px 12px", borderRadius: 8,
+                          border: `1px solid ${T.border}`, background: T.bg,
+                        }}>
+                          {e.fileType?.startsWith("image/") ? (
+                            <img src={e.url} alt={e.fileName} style={{ width: 34, height: 34, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                          ) : (
+                            <Icon size={16} color={T.muted} style={{ flexShrink: 0 }} />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                              fontSize: 12.5, fontWeight: 600, color: T.heading,
+                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                            }}>{e.fileName}</div>
+                            <div style={{ fontSize: 10.5, color: T.muted }}>
+                              {(e.fileSize / 1024).toFixed(1)} KB
+                              {e.keterangan ? ` - ${e.keterangan}` : ""}
+                            </div>
                           </div>
+                          <button onClick={() => setPreview(e)} title="Lihat" style={{
+                            background: "transparent", border: "none", color: T.blue, cursor: "pointer", padding: 4,
+                          }}><Eye size={14} /></button>
+                          <button onClick={() => handleDelete(e.id)} title="Hapus" style={{
+                            background: "transparent", border: "none", color: T.danger, cursor: "pointer", padding: 4,
+                          }}><Trash2 size={14} /></button>
                         </div>
-                        <button onClick={() => handleDelete(e.id)} title="Hapus" style={{
-                          background: "transparent", border: "none", color: T.danger, cursor: "pointer", padding: 4,
-                        }}><Trash2 size={14} /></button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </Card>
@@ -101,33 +115,28 @@ export default function EvidenPage({ rab, notify }) {
         </div>
       )}
 
-      {showUpload && (
-        <Modal open onClose={() => { setShowUpload(null); setKeterangan(""); }} title={`Upload Eviden - ${showUpload.idNumber}`} icon={Upload} width={420}>
-          <div style={{ display: "grid", gap: 14, padding: "10px 0" }}>
-            <div style={{ fontSize: 13, color: T.muted }}>
-              <b>{showUpload.judulKegiatan}</b>
+      <UploadDocModal
+        open={!!showUpload}
+        onClose={() => setShowUpload(null)}
+        title={showUpload ? `Upload Eviden - ${showUpload.idNumber}` : ""}
+        subtitle={showUpload?.judulKegiatan}
+        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+        showKeterangan
+        onSave={(files, keterangan) => handleSave(showUpload, files, keterangan)}
+      />
+
+      {preview && (
+        <Modal open onClose={() => setPreview(null)} title={preview.fileName} icon={Eye} width={600}>
+          {preview.fileType && preview.fileType.startsWith("image/") ? (
+            <img src={preview.url} alt={preview.fileName} style={{ width: "100%", borderRadius: 8 }} />
+          ) : (
+            <div style={{ textAlign: "center", padding: "32px 0", color: T.muted }}>
+              <p>Preview tidak tersedia untuk tipe file ini.</p>
+              <a href={preview.url} download={preview.fileName} style={{ color: T.blue, fontWeight: 600 }}>
+                Download file
+              </a>
             </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: T.heading, marginBottom: 4, display: "block" }}>Keterangan (opsional)</label>
-              <input
-                value={keterangan}
-                onChange={(e) => setKeterangan(e.target.value)}
-                placeholder="Contoh: Foto serah terima"
-                style={{
-                  width: "100%", padding: "10px 14px", borderRadius: 8,
-                  border: `1px solid ${T.border}`, background: T.inputBg,
-                  fontSize: 13, color: T.text, boxSizing: "border-box",
-                }}
-              />
-            </div>
-            <input
-              type="file"
-              multiple
-              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-              onChange={(e) => handleUpload(showUpload, e.target.files)}
-              style={{ fontSize: 13 }}
-            />
-          </div>
+          )}
         </Modal>
       )}
     </div>

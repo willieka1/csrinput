@@ -465,16 +465,6 @@ export default function Dashboard({ data, goto, user }) {
         <div style={{ marginTop: 8 }}>
           <LiveClock />
         </div>
-        <p
-          style={{
-            color: T.muted,
-            fontSize: 13,
-            margin: "4px 0 0",
-          }}
-        >
-          {kontenPerluAksi} konten menunggu terbit,{" "}
-          {proposalCounts.baru} proposal baru masuk.
-        </p>
       </div>
 
       {/* Stakeholder + Konten tiles */}
@@ -482,7 +472,7 @@ export default function Dashboard({ data, goto, user }) {
         className="stat-grid"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
           gap: 12,
           marginBottom: 20,
         }}
@@ -505,12 +495,6 @@ export default function Dashboard({ data, goto, user }) {
           value={data.rab.length}
           label="RAB diajukan"
           onClick={() => goto("rab")}
-        />
-        <Tile
-          icon={FileText}
-          value={data.laporan.length}
-          label="Laporan realisasi"
-          onClick={() => goto("laporan")}
         />
       </div>
 
