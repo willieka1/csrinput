@@ -1,19 +1,9 @@
 import { useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, LogOut, Home } from "lucide-react";
+import { ChevronDown, ChevronLeft, LogOut, Moon, Sun } from "lucide-react";
 import { T, font } from "../../lib/theme";
 import { MENU, MENU_GROUPS, ROLES } from "../../lib/data";
 import { roleInitials } from "../../lib/utils";
-import Badge from "../../components/Badge";
 import AutoLogo from "../../components/AutoLogo";
-
-const fade = (collapsed, extra = {}) => ({
-  opacity: collapsed ? 0 : 1,
-  maxWidth: collapsed ? 0 : 200,
-  overflow: "hidden",
-  whiteSpace: "nowrap",
-  transition: "opacity .15s ease, max-width .15s ease",
-  ...extra,
-});
 
 function groupMenu(userRole, isAdmin) {
   const visible = MENU.filter((m) => {
@@ -27,15 +17,30 @@ function groupMenu(userRole, isAdmin) {
   })).filter((g) => g.items.length > 0);
 }
 
-function CollapsedDivider() {
+function RailTooltip({ label, visible }) {
+  if (!visible) return null;
   return (
-    <div
+    <span
       style={{
-        height: 1,
-        margin: "10px 18px",
-        background: "rgba(255,255,255,0.08)",
+        position: "absolute",
+        left: "calc(100% + 10px)",
+        top: "50%",
+        transform: "translateY(-50%)",
+        background: T.heading,
+        color: "#fff",
+        fontSize: 12,
+        fontWeight: 600,
+        fontFamily: font.body,
+        padding: "6px 10px",
+        borderRadius: 7,
+        whiteSpace: "nowrap",
+        pointerEvents: "none",
+        zIndex: 60,
+        boxShadow: T.shadowMd,
       }}
-    />
+    >
+      {label}
+    </span>
   );
 }
 
@@ -47,352 +52,303 @@ export default function Sidebar({
   onBackToPortal,
   collapsed,
   setCollapsed,
+  themeMode,
+  onToggleTheme,
 }) {
   const groups = groupMenu(user.role, user.isAdmin);
-
+  const flatItems = groups.flatMap((g) => g.items);
   const [openGroups, setOpenGroups] = useState(() => {
     const initial = {};
-    groupMenu(user.role, user.isAdmin).forEach((g) => {
-      // Group terbuka default kalau salah satu item-nya aktif ATAU
-      // group ini punya item admin-only (khusus supaya menu admin baru
-      // langsung kelihatan sebagai badge highlight).
-      initial[g.key] =
-        g.items.some((m) => m.key === active) ||
-        g.items.some((m) => m.adminOnly);
+    groups.forEach((g) => {
+      initial[g.key] = g.items.some((m) => m.key === active);
     });
     return initial;
   });
   const toggleGroup = (key) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  const [hoveredKey, setHoveredKey] = useState(null);
 
   return (
-    <aside
+    <div
       style={{
-        width: collapsed ? 76 : 240,
-        height: "100vh",
+        padding: "16px 0 16px 16px",
+        flexShrink: 0,
         position: "sticky",
         top: 0,
-        background: T.navyDeep,
-        display: "flex",
-        flexDirection: "column",
-        transition: "width .18s ease",
-        flexShrink: 0,
-        overflow: "hidden",
+        height: "100vh",
+        boxSizing: "border-box",
       }}
     >
       <div
         style={{
+          width: collapsed ? 68 : 252,
+          height: "calc(100vh - 32px)",
+          background: T.card,
+          borderRadius: 24,
+          border: `1px solid ${T.border}`,
+          boxShadow: "0 4px 18px rgba(3,91,113,0.07)",
           display: "flex",
-          flexDirection: collapsed ? "column" : "row",
-          alignItems: "center",
-          gap: 10,
-          padding: collapsed ? "18px 10px" : "20px 18px",
-          borderBottom: "1px solid #12294A",
-          transition: "padding .18s ease",
+          flexDirection: "column",
+          overflow: "hidden",
+          transition: "width .2s ease",
         }}
       >
-        <AutoLogo
-          alt="Logo PLN"
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 12,
-            background: "#fff",
-            objectFit: "contain",
-            padding: 5,
-            flexShrink: 0,
-          }}
-        />
-        <div style={fade(collapsed, { flex: collapsed ? "none" : 1 })}>
-          <div
-            style={{
-              color: "#fff",
-              fontFamily: font.display,
-              fontSize: 15,
-              lineHeight: 1.3,
-            }}
-          >
-            SIKAS
+        {collapsed ? (
+          /* ================= RAIL (collapsed) — flat, rapat, gak ada gap antar grup ================= */
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", padding: "14px 0" }}>
+            <button
+              onClick={() => setCollapsed(false)}
+              title="Buka sidebar"
+              style={{
+                width: 36, height: 36, borderRadius: 12,
+                border: `1px solid ${T.border}`, background: T.bg,
+                color: T.muted, cursor: "pointer",
+                display: "grid", placeItems: "center",
+                marginBottom: 16, flexShrink: 0,
+                transition: "background-color .15s ease",
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = T.blueSoft)}
+              onMouseLeave={(e) => (e.currentTarget.style.background = T.bg)}
+            >
+              <ChevronLeft size={15} style={{ transform: "rotate(180deg)" }} />
+            </button>
+
+            <div style={{ flex: 1, width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 5, overflowY: "auto", padding: "0 10px" }}>
+              {flatItems.map((m) => {
+                const Icon = m.icon;
+                const isActive = active === m.key;
+                return (
+                  <div key={m.key} style={{ position: "relative", width: "100%" }}>
+                    <button
+                      onClick={() => onSelect(m.key)}
+                      onMouseEnter={() => setHoveredKey(m.key)}
+                      onMouseLeave={() => setHoveredKey(null)}
+                      aria-label={m.label}
+                      style={{
+                        width: "100%",
+                        aspectRatio: "1",
+                        borderRadius: 13,
+                        border: "none",
+                        cursor: "pointer",
+                        display: "grid",
+                        placeItems: "center",
+                        background: isActive ? T.navy : "transparent",
+                        color: isActive ? "#fff" : T.muted,
+                        transition: "background-color .15s ease, color .15s ease",
+                      }}
+                      onMouseOver={(e) => { if (!isActive) e.currentTarget.style.background = T.blueSoft; }}
+                      onMouseOut={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <Icon size={17} />
+                    </button>
+                    <RailTooltip label={m.label} visible={hoveredKey === m.key} />
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={onLogout}
+              title="Keluar"
+              aria-label="Keluar"
+              style={{
+                width: 36, height: 36, borderRadius: 12,
+                border: "none", background: "transparent",
+                color: T.muted, cursor: "pointer",
+                display: "grid", placeItems: "center",
+                marginTop: 10, flexShrink: 0,
+                transition: "background-color .15s ease, color .15s ease",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = T.dangerSoft; e.currentTarget.style.color = T.danger; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.muted; }}
+            >
+              <LogOut size={16} />
+            </button>
           </div>
-          <div
-            style={{
-              color: "#93ACD1",
-              fontSize: 10.5,
-              fontFamily: font.mono,
-            }}
-          >
-            Sistem Informasi Kas
-          </div>
-        </div>
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}
-          title={collapsed ? "Buka sidebar" : "Tutup sidebar"}
-          style={{
-            flexShrink: 0,
-            width: 30,
-            height: 30,
-            borderRadius: 8,
-            display: "grid",
-            placeItems: "center",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid #1C4A7C",
-            color: "#93ACD1",
-            cursor: "pointer",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255,199,44,0.16)";
-            e.currentTarget.style.color = T.yellow;
-            e.currentTarget.style.borderColor = T.yellow;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-            e.currentTarget.style.color = "#93ACD1";
-            e.currentTarget.style.borderColor = "#1C4A7C";
-          }}
-        >
-          {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
-        </button>
-      </div>
-
-      <nav
-        style={{
-          flex: 1,
-          padding: "8px 10px 14px",
-          overflowY: "auto",
-          overflowX: "hidden",
-        }}
-      >
-        {groups.map((g, gIdx) => {
-          const isOpen = collapsed ? false : !!openGroups[g.key];
-          const groupActive = g.items.some((m) => m.key === active);
-
-          return (
-            <div key={g.key}>
-              {gIdx > 0 && collapsed && <CollapsedDivider />}
-
-              {/* Header grup = tombol dropdown untuk main menu ini */}
+        ) : (
+          /* ================= PANEL (expanded) ================= */
+          <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "16px 14px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, paddingLeft: 2 }}>
               <button
-                onClick={() =>
-                  collapsed ? onSelect(g.items[0]?.key) : toggleGroup(g.key)
-                }
-                title={g.label}
+                onClick={() => setCollapsed(true)}
+                title="Tutup sidebar"
                 style={{
-                  width: "100%",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: collapsed ? "10px 12px" : "10px 12px 10px 10px",
-                  marginTop: gIdx > 0 ? 6 : 0,
-                  marginBottom: 2,
-                  borderRadius: 8,
-                  border: "none",
-                  cursor: "pointer",
-                  background: "transparent",
-                  justifyContent: collapsed ? "center" : "flex-start",
+                  width: 26, height: 26, borderRadius: 8,
+                  border: `1px solid ${T.border}`, background: T.bg,
+                  color: T.muted, cursor: "pointer",
+                  display: "grid", placeItems: "center", flexShrink: 0,
                 }}
               >
-                {!collapsed && (
-                  <span
-                    style={{
-                      width: 10,
-                      height: 2,
-                      borderRadius: 1,
-                      background: T.yellow,
-                      flexShrink: 0,
-                    }}
-                  />
-                )}
-                <span
-                  style={fade(collapsed, {
-                    flex: 1,
-                    maxWidth: collapsed ? 0 : 220,
-                    textAlign: "left",
-                    fontFamily: font.mono,
-                    fontSize: 10.5,
-                    letterSpacing: 1.5,
-                    color: groupActive ? T.yellow : "#8CA3C7",
-                    textTransform: "uppercase",
-                  })}
-                >
-                  {g.label}
-                </span>
-                {!collapsed && (
-                  <ChevronDown
-                    size={13}
-                    color={groupActive ? T.yellow : "#8CA3C7"}
-                    style={{
-                      flexShrink: 0,
-                      transition: "transform .15s ease",
-                      transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-                    }}
-                  />
-                )}
+                <ChevronLeft size={13} />
               </button>
-
-              {(isOpen || collapsed) && (
-                <div style={{ marginBottom: 4 }}>
-                  {g.items.map((m) => {
-                    const Icon = m.icon;
-                    const isActive = active === m.key;
-                    return (
-                      <button
-                        key={m.key}
-                        onClick={() => onSelect(m.key)}
-                        title={m.label}
-                        style={{
-                          width: "100%",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          padding: "10px 12px",
-                          marginBottom: 2,
-                          borderRadius: 8,
-                          border: "none",
-                          cursor: "pointer",
-                          background: isActive
-                            ? "rgba(255,199,44,0.14)"
-                            : "transparent",
-                          color: isActive ? T.yellow : "#B9C9E1",
-                          fontWeight: isActive ? 700 : 500,
-                          fontSize: 13.5,
-                          fontFamily: font.body,
-                          borderLeft: isActive
-                            ? `3px solid ${T.yellow}`
-                            : "3px solid transparent",
-                          justifyContent: collapsed ? "center" : "flex-start",
-                        }}
-                        onMouseEnter={(e) =>
-                          !isActive &&
-                          (e.currentTarget.style.background = "rgba(255,255,255,0.06)")
-                        }
-                        onMouseLeave={(e) =>
-                          !isActive && (e.currentTarget.style.background = "transparent")
-                        }
-                      >
-                        <Icon size={17} style={{ flexShrink: 0 }} />
-                        <span
-                          style={fade(collapsed, { maxWidth: collapsed ? 0 : 180 })}
-                        >
-                          {m.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+              <div style={{ fontFamily: font.display, fontSize: 13.5, fontWeight: 700, color: T.heading, flex: 1 }}>
+                SIKAS PLN
+              </div>
+              {onToggleTheme && (
+                <button
+                  onClick={onToggleTheme}
+                  title={themeMode === "dark" ? "Mode Terang" : "Mode Gelap"}
+                  style={{
+                    width: 26, height: 26, borderRadius: 8,
+                    border: `1px solid ${T.border}`, background: T.bg,
+                    color: T.muted, cursor: "pointer",
+                    display: "grid", placeItems: "center", flexShrink: 0,
+                  }}
+                >
+                  {themeMode === "dark" ? <Moon size={13} /> : <Sun size={13} />}
+                </button>
               )}
             </div>
-          );
-        })}
-      </nav>
 
-      {onBackToPortal && (
-        <div style={{ padding: collapsed ? "4px 10px" : "4px 14px" }}>
-          <button
-            onClick={onBackToPortal}
-            title="Kembali ke Portal"
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "10px 12px",
-              borderRadius: 8,
-              border: "1px solid #1C4A7C",
-              background: "rgba(255,199,44,0.08)",
-              color: T.yellow,
-              cursor: "pointer",
-              fontSize: 12.5,
-              fontWeight: 600,
-              fontFamily: font.body,
-              justifyContent: collapsed ? "center" : "flex-start",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255,199,44,0.18)";
-              e.currentTarget.style.borderColor = T.yellow;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255,199,44,0.08)";
-              e.currentTarget.style.borderColor = "#1C4A7C";
-            }}
-          >
-            <Home size={15} style={{ flexShrink: 0 }} />
-            <span style={fade(collapsed, { maxWidth: collapsed ? 0 : 180 })}>
-              Kembali ke Portal
-            </span>
-          </button>
-        </div>
-      )}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, padding: "10px 8px", background: T.bg, borderRadius: 14 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 9, background: "#fff", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                <AutoLogo alt="Logo PLN" style={{ width: 20, height: 20, objectFit: "contain" }} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ color: T.heading, fontFamily: font.body, fontSize: 12, fontWeight: 700, lineHeight: 1.2 }}>
+                  Sistem Informasi Kas
+                </div>
+                <div style={{ color: T.muted, fontSize: 10, fontFamily: font.body }}>
+                  PLN Indonesia Power
+                </div>
+              </div>
+            </div>
 
-      <div
-        style={{
-          padding: collapsed ? "14px 10px" : 14,
-          borderTop: "1px solid #12294A",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: collapsed ? "column" : "row",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: "50%",
-              background: T.yellow,
-              color: T.navyDeep,
-              display: "grid",
-              placeItems: "center",
-              fontFamily: font.display,
-              fontWeight: 700,
-              fontSize: 12,
-              flexShrink: 0,
-            }}
-          >
-            {roleInitials(user.role)}
+            <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", display: "flex", flexDirection: "column", gap: 6 }}>
+              {groups.map((g) => {
+                const isOpen = !!openGroups[g.key];
+                const groupActive = g.items.some((m) => m.key === active);
+                return (
+                <div key={g.key}>
+                  <button
+                    onClick={() => toggleGroup(g.key)}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "6px 8px",
+                      border: "none",
+                      background: "transparent",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <span style={{
+                      flex: 1,
+                      textAlign: "left",
+                      fontFamily: font.body, fontSize: 10.5, fontWeight: 700,
+                      letterSpacing: 0.8, color: groupActive ? T.blue : "#A9B3B6", textTransform: "uppercase",
+                    }}>
+                      {g.label}
+                    </span>
+                    <ChevronDown
+                      size={13}
+                      color={groupActive ? T.blue : "#C2CACC"}
+                      style={{
+                        flexShrink: 0,
+                        transition: "transform .15s ease",
+                        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                      }}
+                    />
+                  </button>
+                  {isOpen && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 2, marginBottom: 8 }}>
+                    {g.items.map((m) => {
+                      const Icon = m.icon;
+                      const isActive = active === m.key;
+                      return (
+                        <button
+                          key={m.key}
+                          onClick={() => onSelect(m.key)}
+                          style={{
+                            width: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                            padding: "8.5px 10px",
+                            borderRadius: 10,
+                            border: "none",
+                            cursor: "pointer",
+                            background: isActive ? T.navy : "transparent",
+                            color: isActive ? "#fff" : T.text,
+                            fontWeight: isActive ? 600 : 500,
+                            fontSize: 13.2,
+                            fontFamily: font.body,
+                            textAlign: "left",
+                            transition: "background-color .15s ease, color .15s ease",
+                          }}
+                          onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = T.blueSoft; }}
+                          onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <Icon size={15} style={{ flexShrink: 0 }} />
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {m.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  )}
+                </div>
+                );
+              })}
+            </div>
+
+            {onBackToPortal && (
+              <button
+                onClick={onBackToPortal}
+                style={{
+                  width: "100%",
+                  marginTop: 12,
+                  padding: "9px 12px",
+                  borderRadius: 10,
+                  border: `1px solid ${T.border}`,
+                  background: T.bg,
+                  color: T.muted,
+                  cursor: "pointer",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: font.body,
+                }}
+              >
+                Kembali ke Portal
+              </button>
+            )}
+
+            <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: "50%", background: T.navy, color: "#fff",
+                display: "grid", placeItems: "center", fontFamily: font.display, fontWeight: 700, fontSize: 11, flexShrink: 0,
+              }}>
+                {roleInitials(user.role)}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: T.heading, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {user.username || "User"}
+                </div>
+                <div style={{ fontSize: 10, color: T.muted }}>
+                  {ROLES.find((r) => r.value === user.role)?.label}
+                </div>
+              </div>
+              <button
+                onClick={onLogout}
+                title="Keluar"
+                aria-label="Keluar"
+                style={{
+                  flexShrink: 0, width: 26, height: 26, borderRadius: 8,
+                  display: "grid", placeItems: "center",
+                  border: "none", background: "transparent", color: T.muted, cursor: "pointer",
+                  transition: "background-color .15s ease, color .15s ease",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = T.dangerSoft; e.currentTarget.style.color = T.danger; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = T.muted; }}
+              >
+                <LogOut size={13} />
+              </button>
+            </div>
           </div>
-
-          <div style={fade(collapsed, { flex: collapsed ? "none" : 1 })}>
-            <Badge tone="yellow">
-              {ROLES.find((r) => r.value === user.role)?.label}
-            </Badge>
-          </div>
-
-          <button
-            onClick={onLogout}
-            title="Keluar"
-            aria-label="Keluar"
-            style={{
-              flexShrink: 0,
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              display: "grid",
-              placeItems: "center",
-              border: "1px solid #1C4A7C",
-              background: "transparent",
-              color: "#B9C9E1",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(196,67,43,0.18)";
-              e.currentTarget.style.color = "#FF9D89";
-              e.currentTarget.style.borderColor = "#7A2E20";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "#B9C9E1";
-              e.currentTarget.style.borderColor = "#1C4A7C";
-            }}
-          >
-            <LogOut size={15} />
-          </button>
-        </div>
+        )}
       </div>
-    </aside>
+    </div>
   );
 }
